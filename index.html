@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Echoes – Final Demo</title>
+<style>
+html, body {
+  margin:0;
+  padding:0;
+  background:black;
+  color:white;
+  font-family:Arial, sans-serif;
+  overflow:hidden;
+}
+canvas { display:block; }
+
+#overlay {
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  pointer-events:none;
+}
+
+#hud {
+  position:absolute;
+  top:20px;
+  left:20px;
+  font-size:20px;
+  line-height:1.4;
+}
+
+#ui {
+  position:fixed;
+  bottom:30px;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  pointer-events:auto;
+}
+
+button {
+  padding:18px 28px;
+  font-size:18px;
+  border-radius:14px;
+  border:2px solid #888;
+  background:#222;
+  color:white;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="overlay">
+  <div id="hud">
+    <div id="system"></div>
+    <div id="hp"></div>
+    <div id="isk"></div>
+    <div id="enemy"></div>
+  </div>
+</div>
+
+<div id="ui">
+  <button onclick="engage()">ENGAGE</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+/* GAME STATE */
+const systems = ["Solara","Rift","Korr","Vega"];
+const player = { hp:100, dmg:6, isk:1000, system:0 };
+let enemy = null;
+
+/* STARS */
+const stars=[];
+for(let i=0;i<120;i++){
+  stars.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2+0.5 });
+}
+
+function engage(){
+  enemy = { hp:60 + player.system*25, dmg:4 + player.system };
+}
+
+function updateCombat(){
+  if(!enemy) return;
+
+  enemy.hp -= player.dmg * 0.08;
+  player.hp -= enemy.dmg * 0.05;
+
+  if(enemy.hp <= 0){
+    player.isk += 500;
+    player.system = (player.system + 1) % systems.length;
+    enemy = null;
+    alert("Enemy destroyed! Jumping system.");
+  }
+
+  if(player.hp <= 0){
+    player.hp = 100;
+    enemy = null;
+    alert("Ship repaired.");
+  }
+}
+
+function loop(){
+  ctx.fillStyle="black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle="white";
+  for(const s of stars){
+    s.y += s.s;
+    if(s.y > canvas.height) s.y = 0;
+    ctx.fillRect(s.x, s.y, 2, 2);
+  }
+
+  updateCombat();
+
+  document.getElementById("system").textContent = "System: " + systems[player.system];
+  document.getElementById("hp").textContent = "HP: " + Math.floor(player.hp);
+  document.getElementById("isk").textContent = "ISK: " + player.isk;
+  document.getElementById("enemy").textContent = enemy ? "Enemy HP: " + Math.floor(enemy.hp) : "No hostiles";
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
